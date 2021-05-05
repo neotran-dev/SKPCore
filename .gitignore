@@ -1,0 +1,41 @@
+#R.generated.swift
+*.app.dSYM.zip
+*.ipa
+*.DS_Store
+build/
+DerivedData
+*.ipa
+*.dSYM.*
+*.dSYM
+ipa_files/
+
+## Various settings
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+xcdebugger
+
+## Other
+*.xcscmblueprint
+*.moved-aside
+*.xcuserstate
+*.xccheckout
+.DS_Store
+*.DS_Store
+#*
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+#Reports
+#*swiftlint_report.html
+#*swiftlint_report.xml
+
+#Config
