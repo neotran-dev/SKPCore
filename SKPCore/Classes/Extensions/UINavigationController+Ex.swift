@@ -89,6 +89,11 @@ public extension UINavigationController {
         isNavigationBarHidden = !value
         isNavigationBarHidden = value
     }
+    
+    func enableSwipeToBack() {
+        interactivePopGestureRecognizer?.delegate = nil
+        interactivePopGestureRecognizer?.isEnabled = true
+    }
 }
 
 public extension UIViewController {

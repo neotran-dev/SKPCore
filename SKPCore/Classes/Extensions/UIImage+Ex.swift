@@ -63,5 +63,30 @@ public extension NSUIImage {
     var scaledSize: CGSize {
         .init(width: size.width * scale, height: size.height * scale)
     }
+    
+    func size(withLimitedSize limitedSize: CGSize) -> CGSize {
+        let originalSize = self.size
+        var thumbSize = originalSize
+        if originalSize.width > limitedSize.width {
+            thumbSize.width = limitedSize.width
+            thumbSize.height = originalSize.height / (1.0 * (originalSize.width / thumbSize.width))
+        }
+        if originalSize.height > limitedSize.height {
+            thumbSize.height = limitedSize.height
+            thumbSize.width = originalSize.width / (1.0 * (originalSize.height / thumbSize.height))
+        }
+        return thumbSize
+    }
+    
+    func imageWith(newSize: CGSize) -> UIImage {
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        let scaledImage = renderer.image { _ in
+            self.draw(in: CGRect(
+                origin: .zero,
+                size: newSize
+            ))
+        }
+        return scaledImage
+    }
 }
 #endif
