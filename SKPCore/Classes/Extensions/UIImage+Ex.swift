@@ -88,5 +88,15 @@ public extension NSUIImage {
         }
         return scaledImage
     }
+    
+    func convertImageToBase64String() -> String? {
+        return self.jpegData(compressionQuality: 1)?.base64EncodedString()
+    }
+    
+    class func convertBase64StringToImage(imageBase64String: String) -> UIImage? {
+        guard let imageData = Data.init(base64Encoded: imageBase64String, options: .init(rawValue: 0)) else { return nil }
+        return UIImage(data: imageData)
+    }
+    
 }
 #endif
