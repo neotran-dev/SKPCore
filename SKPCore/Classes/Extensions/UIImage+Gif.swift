@@ -10,6 +10,7 @@
 import Foundation
 #if canImport(UIKit)
     import UIKit
+    import MobileCoreServices
 #endif
 
 import ImageIO
@@ -224,6 +225,83 @@ extension UIImage {
                                               duration: Double(duration) / 1000.0)
 
         return animation
+    }
+    
+    public func animatedImageByScalingAndCropping(to size: CGSize) -> UIImage? {
+        guard !self.size.equalTo(size) &&
+                !size.equalTo(CGSize.zero) else {
+            return self
+        }
+        
+        guard let images = self.images else {
+            return self.imageWith(newSize: size)
+        }
+
+        var scaledSize = size
+        var thumbnailPoint = CGPoint.zero
+
+        let widthFactor = size.width / self.size.width
+        let heightFactor = size.height / self.size.height
+        
+        if (widthFactor > heightFactor) {
+            thumbnailPoint.y = (size.height - scaledSize.height) * 0.5
+        }
+        else if (widthFactor < heightFactor) {
+            thumbnailPoint.x = (size.width - scaledSize.width) * 0.5
+        }
+        
+        var scaledImages: [UIImage] = []
+
+        UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+
+        for image in images {
+            image.draw(in: CGRect(x: thumbnailPoint.x, y: thumbnailPoint.y, width: scaledSize.width, height: scaledSize.height))
+            let newImage = UIGraphicsGetImageFromCurrentImageContext()
+
+            if let newImage = newImage {
+                scaledImages.append(newImage)
+            }
+        }
+
+        UIGraphicsEndImageContext()
+
+        return UIImage.animatedImage(with: scaledImages, duration: duration)
+    }
+    
+    public func gifDataRepresentation(gifDuration: TimeInterval = 0.0, loopCount: Int = 0) throws -> Data {
+        let images = self.images ?? [self]
+        let frameCount = images.count
+        let frameDuration: TimeInterval = gifDuration <= 0.0 ? self.duration / Double(frameCount) : gifDuration / Double(frameCount)
+        let frameDelayCentiseconds = Int(lrint(frameDuration * 100))
+        let frameProperties = [
+            kCGImagePropertyGIFDictionary: [
+                kCGImagePropertyGIFDelayTime: NSNumber(value: frameDelayCentiseconds)
+            ]
+        ]
+
+        guard let mutableData = CFDataCreateMutable(nil, 0),
+           let destination = CGImageDestinationCreateWithData(mutableData, kUTTypeGIF, frameCount, nil) else {
+            throw NSError(domain: "AnimatedGIFSerializationErrorDomain",
+                          code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Could not create destination with data."])
+        }
+        let imageProperties = [
+            kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: NSNumber(value: loopCount)]
+        ] as CFDictionary
+        CGImageDestinationSetProperties(destination, imageProperties)
+        for image in images {
+            if let cgimage = image.cgImage {
+                CGImageDestinationAddImage(destination, cgimage, frameProperties as CFDictionary)
+            }
+        }
+
+        let success = CGImageDestinationFinalize(destination)
+        if !success {
+            throw NSError(domain: "AnimatedGIFSerializationErrorDomain",
+                          code: -2,
+                          userInfo: [NSLocalizedDescriptionKey: "Could not finalize image destination"])
+        }
+        return mutableData as Data
     }
 }
 

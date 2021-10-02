@@ -49,4 +49,17 @@ public extension String {
     func convertToPlainAlphabetical() -> String {
         return self.folding(options: .diacriticInsensitive, locale: .current)
     }
+    
+    func string(withMaximumLength maxLength: Int) -> String? {
+        guard length > maxLength else { return self }
+        return self.substring(to: maxLength - 1)?.appending("...")
+    }
+    
+    private func capitalizingFirstLetter() -> String {
+        return prefix(1).capitalized + dropFirst()
+    }
+
+    mutating func capitalizeFirstLetter() {
+        self = self.capitalizingFirstLetter()
+    }
 }
