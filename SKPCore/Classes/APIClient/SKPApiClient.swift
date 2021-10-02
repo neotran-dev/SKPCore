@@ -69,7 +69,7 @@ public extension SKPApiClient {
             var countData: UInt = 0
             multiDatas.forEach({ dataExt in
                 countData += 1
-                let fileName = dataExt.name.isEmptyString() ? "file\(countData)" : dataExt.name
+                let fileName = dataExt.name.isEmptyString ? "file\(countData)" : dataExt.name
                 let fileNameExt = (fileName as NSString).appendingPathExtension(dataExt.fileExtension) ?? fileName
                 multipartFormData.append(dataExt.data, withName: dataExt.name, fileName: fileNameExt, mimeType: dataExt.mimeType)
             })

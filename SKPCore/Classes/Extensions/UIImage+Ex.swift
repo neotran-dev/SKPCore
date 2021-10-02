@@ -64,7 +64,7 @@ public extension NSUIImage {
         .init(width: size.width * scale, height: size.height * scale)
     }
     
-    func size(widthLimitedSize limitedSize: CGSize) -> CGSize {
+    func size(withLimitedSize limitedSize: CGSize) -> CGSize {
         let originalSize = self.size
         var thumbSize = originalSize
         if originalSize.width > limitedSize.width {
@@ -79,9 +79,6 @@ public extension NSUIImage {
     }
     
     func imageWith(newSize: CGSize) -> UIImage {
-        // Determine the scale factor that preserves aspect ratio
-        let widthRatio = newSize.width / size.width
-        let heightRatio = newSize.height / size.height
         // Draw and return the resized UIImage
         let renderer = UIGraphicsImageRenderer(size: newSize)
         let scaledImage = renderer.image { _ in
@@ -91,6 +88,15 @@ public extension NSUIImage {
             ))
         }
         return scaledImage
+    }
+
+    func convertImageToBase64String() -> String? {
+        return self.jpegData(compressionQuality: 1)?.base64EncodedString()
+    }
+    
+    class func convertBase64StringToImage(imageBase64String: String) -> UIImage? {
+        guard let imageData = Data.init(base64Encoded: imageBase64String, options: .init(rawValue: 0)) else { return nil }
+        return UIImage(data: imageData)
     }
 }
 #endif
