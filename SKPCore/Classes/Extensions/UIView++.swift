@@ -9,7 +9,9 @@
 import Foundation
 import UIKit
 import SnapKit
-
+public enum ViewBlurStyle: Int {
+    case extraLight = 1, light = 2, dark = 3
+}
 @IBDesignable
 public extension UIView {
     @IBInspectable var blurStyle: Int {
@@ -37,6 +39,7 @@ public extension UIView {
                 }
                 blurEffectView.frame = self.bounds
                 blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                self.clipsToBounds = true
                 self.insertSubview(blurEffectView, at: 0)
             default:
                 break

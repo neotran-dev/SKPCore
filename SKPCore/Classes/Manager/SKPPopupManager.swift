@@ -8,6 +8,29 @@
 
 import Foundation
 import UIKit
+import SwiftEntryKit
+
+public extension UIEdgeInsets {
+    static var safeAreaInset: UIEdgeInsets {
+        if #available(iOS 11.0, *) {
+            return UIApplication.shared.keyWindow?.rootViewController?.view.safeAreaInsets ?? .zero
+        } else {
+            let statusBarMaxY = UIApplication.shared.statusBarFrame.maxY
+            return UIEdgeInsets(top: statusBarMaxY, left: 0, bottom: 10, right: 0)
+        }
+    }
+}
+
+public extension CGFloat {
+    
+    var multipleByDevice: CGFloat {
+        return self * UIDevice.width / 320
+    }
+    
+    var subtractVerticalInset: CGFloat {
+        return self - UIEdgeInsets.safeAreaInset.top - UIEdgeInsets.safeAreaInset.bottom
+    }
+}
 
 public class SKPPopupManager {
     
@@ -21,6 +44,7 @@ public class SKPPopupManager {
     
     public static let shared = SKPPopupManager()
     
+    // MARK: Alert
     public func showAlert(withTitle title: String? = nil,
                           message: String? = nil,
                           okButtonTitle: String? = nil,
@@ -97,5 +121,54 @@ public class SKPPopupManager {
             popOver.sourceRect = sourceRect
         }
         vc.present(alert, animated: true, completion: completion)
+    }
+    
+    // MARK: SwiftEntryKit Popup
+    public static var dimColor = UIColor.black.withAlphaComponent(0.7)
+    public static var popupAnimationDuration: TimeInterval = 0.3
+    public static var popupOutsideSpace: CGFloat = 10
+    public static var cornerRadius: CGFloat = 10
+    
+    public static var defaultAttributes: EKAttributes {
+        var attributes = EKAttributes.centerFloat
+        attributes.windowLevel = .normal
+        attributes.screenBackground = .color(color: EKColor(dimColor))
+        attributes.entranceAnimation = .init(translate: .init(duration: 0.7, anchorPosition: .top, spring: .init(damping: 1, initialVelocity: 0)), fade: .init(from: 0.8, to: 1, duration: 0.3))
+        
+        attributes.exitAnimation = .init(translate: .init(duration: 0.7, anchorPosition: .automatic, spring: .init(damping: 1, initialVelocity: 0)),
+                                         fade: .init(from: 1, to: 0, duration: popupAnimationDuration))
+        
+        attributes.popBehavior = .animated(animation: .init(fade: .init(from: 1, to: 0, duration: popupAnimationDuration)))
+        
+        attributes.scroll = .enabled(swipeable: true, pullbackAnimation: .easeOut)
+        attributes.displayDuration = .infinity
+        attributes.screenInteraction = .dismiss
+        attributes.entryInteraction = .absorbTouches
+        attributes.statusBar = .light
+        attributes.precedence = .enqueue(priority: .normal)
+        attributes.positionConstraints.size = .init(width: .offset(value: 20), height: .intrinsic)
+        // Give the entry maximum width of the screen minimum edge - thus the entry won't grow much when the device orientation changes from portrait to landscape mode.
+        let edgeWidth = min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
+        attributes.positionConstraints.maxSize = .init(width: .constant(value: edgeWidth), height: .intrinsic)
+        return attributes
+    }
+    
+    public func presentPopup(with viewController: UIViewController,
+                                           entryName: String? = nil,
+                                           ekAttributes: EKAttributes = SKPPopupManager.defaultAttributes,
+                                           insideKeyWindow: Bool = true,
+                                           rollbackWindow: SwiftEntryKit.RollbackWindow = .main, isDropCurrentEntry: Bool = false) {
+        UIApplication.dismissKeyboard()
+        var customAttributes = ekAttributes
+        customAttributes.name = entryName
+        customAttributes.precedence = .override(priority: .normal, dropEnqueuedEntries: isDropCurrentEntry)
+        viewController.view.cornerRadius = SKPPopupManager.cornerRadius
+        SwiftEntryKit.display(entry: viewController, using: customAttributes, presentInsideKeyWindow: insideKeyWindow, rollbackWindow: rollbackWindow)
+    }
+    
+    public func dismissPopup(_ completion: (() -> Void)? = nil) {
+        SwiftEntryKit.dismiss {
+            completion?()
+        }
     }
 }

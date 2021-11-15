@@ -51,6 +51,7 @@ Pod::Spec.new do |s|
   s.dependency "KRProgressHUD", '~> 3.4.7'
   s.dependency 'SnapKit', '~> 5.0'
   s.dependency 'RxSwiftExt', '~> 5.2.0'
+  s.dependency 'SwiftEntryKit', '1.2.6'
   
   s.swift_version = "5"
   s.xcconfig = { "OTHER_LDFLAGS" => "-ObjC" }
