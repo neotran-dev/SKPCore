@@ -9,8 +9,8 @@
 import Foundation
 import NSObject_Rx
 
-open class SKPBaseViewModel<T>: NSObject, HasDisposeBag where T: SKPPresenter {
-    public var presenter: T?
+open class SKPBaseViewModel<T: AnyObject>: NSObject, HasDisposeBag where T: SKPPresenter {
+    public weak var presenter: T?
     
     public init(with presenter: T) {
         self.presenter = presenter

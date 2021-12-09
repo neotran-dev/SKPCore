@@ -87,3 +87,7 @@ public extension NSUIEdgeInsets {
     }
 }
 
+public extension Bool {
+    var integerValue: Int { return self ? 1 : 0 }
+}
+

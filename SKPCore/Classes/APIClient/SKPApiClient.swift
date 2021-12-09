@@ -12,10 +12,36 @@ import RxSwift
 import SwiftyJSON
 import KRProgressHUD
 
-//MARK: Properties
+final class Logger: EventMonitor {
+    let queue = DispatchQueue(label: "AlamofireQueue")
+    
+    // Event called when any type of Request is resumed.
+    func requestDidResume(_ request: Request) {
+        print("Resuming: \(request)")
+    }
+    
+    // Event called whenever a DataRequest has parsed a response.
+    func request<Value>(_ request: DataRequest, didParseResponse response: DataResponse<Value, AFError>) {
+        // debugPrint("Finished: \(response)")
+    }
+    
+    func request(_ request: Request, didCreateURLRequest urlRequest: URLRequest) {
+        if let body = urlRequest.httpBody {
+            let str = String(decoding: body, as: UTF8.self)
+            debugPrint("Param: \(str)")
+        }
+        debugPrint("Header: \(urlRequest.allHTTPHeaderFields ?? [String: Any]())")
+    }
+}
+
 open class SKPApiClient {
     public static let shared: SKPApiClient = SKPApiClient()
+    fileprivate var session: Session
     public var baseURL: String = ""
+    
+    init() {
+        session = Session(eventMonitors: [Logger()])
+    }
 }
 
 //MARK: Privates Methods
@@ -47,7 +73,7 @@ public extension SKPApiClient {
         
         let encoding: ParameterEncoding = method == .get ? URLEncoding.default : JSONEncoding.default
         
-        let dataRequest = AF.request(apiPath, method: method, parameters: params, encoding: encoding, headers: headers)
+        let dataRequest = session.request(apiPath, method: method, parameters: params, encoding: encoding, headers: headers)
             .validate(statusCode: 200..<300)
         
         return dataRequest
@@ -193,5 +219,4 @@ public extension SKPApiClient {
             return Disposables.create()
         })
     }
-    
 }
