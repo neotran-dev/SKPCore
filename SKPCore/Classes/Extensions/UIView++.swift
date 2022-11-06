@@ -49,14 +49,16 @@ public extension UIView {
 }
 public extension UIView {
     
-    func connectNibUI() {
-        let nib = UINib(nibName: String(describing: type(of: self)), bundle: nil).instantiate(withOwner: self, options: nil)
+    func connectNibUI(usePadSuffix: Bool = false) {
+        let isPad = UIDevice.current.userInterfaceIdiom == .pad
+        let typeName = String(describing: type(of: self))
+        let nibName = usePadSuffix ? (isPad ? "\(typeName)_Pad" : typeName) : typeName
+        let nib = UINib(nibName: nibName, bundle: nil).instantiate(withOwner: self, options: nil)
         guard let nibView = nib.first as? UIView else {
             fatalError("Nib is not correct")
         }
-        nibView.translatesAutoresizingMaskIntoConstraints = false
+        nibView.backgroundColor = .clear
         self.addSubview(nibView)
-        
         nibView.translatesAutoresizingMaskIntoConstraints = false
         nibView.topAnchor.constraint(equalTo: self.topAnchor, constant: 0).isActive = true
         nibView.bottomAnchor.constraint(equalTo: self.bottomAnchor, constant: 0).isActive = true
@@ -200,5 +202,52 @@ public extension UIView {
             maker.bottom.equalToSuperview().inset(-inset.bottom)
             maker.right.equalToSuperview().inset(-inset.right)
         })
+    }
+}
+
+public extension UIView {
+
+    private static let kLayerNameGradientBorder = "GradientBorderLayer"
+
+    func gradientBorder(width: CGFloat,
+                        colors: [UIColor],
+                        startPoint: CGPoint = CGPoint(x: 0.5, y: 0.0),
+                        endPoint: CGPoint = CGPoint(x: 0.5, y: 1.0),
+                        andRoundCornersWithRadius cornerRadius: CGFloat = 0) {
+
+        guard let existingBorder = gradientBorderLayer() else {
+            let border =  CAGradientLayer()
+            border.name = UIView.kLayerNameGradientBorder
+            border.frame = CGRect(x: bounds.origin.x, y: bounds.origin.y,
+                                  width: bounds.size.width + width, height: bounds.size.height + width)
+            border.colors = colors.map { return $0.cgColor }
+            border.startPoint = startPoint
+            border.endPoint = endPoint
+
+            let mask = CAShapeLayer()
+            let maskRect = CGRect(x: bounds.origin.x + width/2, y: bounds.origin.y + width/2,
+                                  width: bounds.size.width - width, height: bounds.size.height - width)
+            mask.path = UIBezierPath(ovalIn: maskRect).cgPath
+            mask.fillColor = UIColor.clear.cgColor
+            mask.strokeColor = UIColor.white.cgColor
+            mask.lineWidth = width
+
+            border.mask = mask
+            layer.addSublayer(border)
+            layer.cornerRadius = cornerRadius
+            layer.masksToBounds = true
+            return
+        }
+    }
+    
+    private func gradientBorderLayer() -> CAGradientLayer? {
+        guard let borderLayer = layer.sublayers?.first { return $0.name == UIView.kLayerNameGradientBorder } as? CAGradientLayer else {
+            return nil
+        }
+        return borderLayer
+    }
+    
+    func removeGradientBorder() {
+        layer.sublayers?.first { return $0.name == UIView.kLayerNameGradientBorder }?.removeFromSuperlayer()
     }
 }

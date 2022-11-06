@@ -24,4 +24,17 @@ public extension NSAttributedString {
     var html: Data { data(.html)  }
     var rtf:  Data { data(.rtf)   }
     var rtfd: Data { data(.rtfd)  }
+    
+    func extractThumbnailImage() -> UIImage? {
+        var image: UIImage?
+        enumerateAttribute(NSAttributedString.Key.attachment, in: NSRange(location: 0, length: length), options: NSAttributedString.EnumerationOptions()) {  (attribute, range, stop) -> Void in
+            guard let att = attribute as? NSTextAttachment,
+                  let fileType = att.fileType?.lowercased(),
+                  "jpeg, jpg, png, tiff".components(separatedBy: ",").contains(where: { fileType.contains($0) }) else { return }
+            
+            guard let data = att.fileWrapper?.regularFileContents else { return }
+            image = UIImage(data: data)
+        }
+        return image
+    }
 }

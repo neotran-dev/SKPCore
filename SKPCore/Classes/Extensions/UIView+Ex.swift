@@ -112,11 +112,17 @@ public extension NSUIView {
         return capturedImage
     }
     
-    func rotate(degree: CGFloat = 0, duration: TimeInterval = 0) {
+    func rotate(degree: CGFloat = 0, duration: TimeInterval) {
         DispatchQueue.mainAsync { [weak self] in
             UIView.animate(withDuration: duration) {
                 self?.transform = CGAffineTransform(rotationAngle: CGFloat.pi * degree / 180.0)
             }
+        }
+    }
+    
+    func rotate(degree: CGFloat = 0) {
+        DispatchQueue.mainAsync { [weak self] in
+            self?.transform = CGAffineTransform(rotationAngle: CGFloat.pi * degree / 180.0)
         }
     }
     #endif

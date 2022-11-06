@@ -40,6 +40,10 @@ public extension NSManagedObject {
         }
     }
     
+    static func first<T: NSManagedObject> (by attributes: [String: Any] = [:], context: NSManagedObjectContext) -> T? {
+        return find(by: attributes, context: context).first
+    }
+    
     static func count(by attributes: [String: Any] = [:], context: NSManagedObjectContext) -> Int {
         let entityName = String(describing: type(of: self))
         

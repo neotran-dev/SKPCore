@@ -15,29 +15,27 @@ public class SKPHUDManager {
     public typealias SKPProgressIndicatorColor = [UIColor]
     
     public class SKPHUDAppearance {
-        public var style: SKPProgressStyle = .white
-        public var maskType: SKPProgressMaskType = .clear
-        public var indicatorColors: SKPProgressIndicatorColor = [.black, .lightGray]
+        
+        public var style: SKPProgressStyle = .white { willSet { KRProgressHUD.appearance().style = newValue } }
+        
+        public var maskType: SKPProgressMaskType = .clear { willSet { KRProgressHUD.appearance().maskType = newValue } }
+        
+        public var indicatorColors: SKPProgressIndicatorColor = [.black, .lightGray] { willSet { KRProgressHUD.appearance().activityIndicatorColors = newValue } }
     }
     
     public static let shared: SKPHUDManager = SKPHUDManager()
     
     public static let appearance = SKPHUDAppearance()
     
-    private func applyStyle() {
-        KRProgressHUD.appearance().style = SKPHUDManager.appearance.style
-        KRProgressHUD.appearance().maskType = SKPHUDManager.appearance.maskType
-        KRProgressHUD.appearance().activityIndicatorColors = SKPHUDManager.appearance.indicatorColors
-        KRProgressHUD.appearance().duration = 0
-    }
-    
     public func show() {
-        applyStyle()
-        KRProgressHUD.show()
+        DispatchQueue.mainAsync { [weak self] in
+            KRProgressHUD.show()
+        }
     }
     
     public func dismiss(_ completion: (() -> Void)? = nil) {
-        applyStyle()
-        KRProgressHUD.dismiss(completion)
+        DispatchQueue.mainAsync { [weak self] in
+            KRProgressHUD.dismiss(completion)
+        }
     }
 }

@@ -182,6 +182,14 @@ public extension Date {
         let calDate = Calendar.current.date(from: calComponents) ?? self
         return Calendar.current.dateComponents([Calendar.Component.day], from: date, to: calDate).day ?? 0
     }
+    
+    func dateByRemovedTime() -> Date? {
+        var calComponents = Calendar.current.dateComponents(in: TimeZone.current, from: self)
+        calComponents.day = self.day
+        calComponents.month = self.month
+        calComponents.year = self.year
+        return Calendar.current.date(from: calComponents)
+    }
 }
 
 public extension TimeZone {

@@ -85,7 +85,7 @@ public extension Date {
         let earliest = self < fromDate ? self  : fromDate
         let latest = (earliest == self) ? fromDate : self
         
-        let components:DateComponents = Calendar.current.dateComponents([.minute,.hour,.day,.weekOfYear,.month,.year,.second], from: earliest, to: latest)
+        let components: DateComponents = Calendar.current.dateComponents([.minute,.hour,.day,.weekOfYear,.month,.year,.second], from: earliest, to: latest)
         let year = components.year  ?? 0
         let month = components.month  ?? 0
         let week = components.weekOfYear  ?? 0
@@ -126,4 +126,28 @@ public extension Date {
         }
         
     }
+    
+    static func daysBetween(fromDate: Date, toDate: Date) -> Int? {
+        let calendar = Calendar.current
+        let earliest = toDate < fromDate ? toDate  : fromDate
+        let latest = (earliest == toDate) ? fromDate : toDate
+        let date1 = calendar.startOfDay(for: earliest)
+        let date2 = calendar.startOfDay(for: latest)
+        return calendar.dateComponents([.day], from: date1, to: date2).day
+    }
+    
+    static func dates(from fromDate: Date, to toDate: Date) -> [Date] {
+        var dates: [Date] = []
+        var date = fromDate
+        var calendar = Calendar.current
+        calendar.timeZone = .current
+        
+        while date <= toDate {
+            dates.append(date)
+            guard let newDate = calendar.date(byAdding: .day, value: 1, to: date) else { break }
+            date = newDate
+        }
+        return dates
+    }
+
 }

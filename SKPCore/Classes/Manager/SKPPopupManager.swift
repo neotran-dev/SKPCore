@@ -148,7 +148,7 @@ public class SKPPopupManager {
         attributes.precedence = .enqueue(priority: .normal)
         attributes.positionConstraints.size = .init(width: .offset(value: 20), height: .intrinsic)
         // Give the entry maximum width of the screen minimum edge - thus the entry won't grow much when the device orientation changes from portrait to landscape mode.
-        let edgeWidth = min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
+        let edgeWidth = UIDevice.isIpad ? UIScreen.main.bounds.width * 0.6 : min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
         attributes.positionConstraints.maxSize = .init(width: .constant(value: edgeWidth), height: .intrinsic)
         return attributes
     }
@@ -164,6 +164,19 @@ public class SKPPopupManager {
         customAttributes.precedence = .override(priority: .normal, dropEnqueuedEntries: isDropCurrentEntry)
         viewController.view.cornerRadius = SKPPopupManager.cornerRadius
         SwiftEntryKit.display(entry: viewController, using: customAttributes, presentInsideKeyWindow: insideKeyWindow, rollbackWindow: rollbackWindow)
+    }
+    
+    public func presentPopup(with view: UIView,
+                                           entryName: String? = nil,
+                                           ekAttributes: EKAttributes = SKPPopupManager.defaultAttributes,
+                                           insideKeyWindow: Bool = true,
+                                           rollbackWindow: SwiftEntryKit.RollbackWindow = .main, isDropCurrentEntry: Bool = false) {
+        UIApplication.dismissKeyboard()
+        var customAttributes = ekAttributes
+        customAttributes.name = entryName
+        customAttributes.precedence = .override(priority: .normal, dropEnqueuedEntries: isDropCurrentEntry)
+        view.cornerRadius = SKPPopupManager.cornerRadius
+        SwiftEntryKit.display(entry: view, using: customAttributes, presentInsideKeyWindow: insideKeyWindow, rollbackWindow: rollbackWindow)
     }
     
     public func dismissPopup(_ completion: (() -> Void)? = nil) {

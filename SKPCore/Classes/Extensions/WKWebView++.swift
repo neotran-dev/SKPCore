@@ -10,6 +10,14 @@ import WebKit
 
 public extension WKWebView {
     
+    func addCssWhenDocumentEnd(_ cssString: String) {
+        let jsString = "var style = document.createElement('style'); style.innerHTML = '\(cssString)'; document.head.appendChild(style);"
+        let userScript = WKUserScript(source: jsString,
+                                          injectionTime: .atDocumentEnd,
+                                          forMainFrameOnly: true)
+        configuration.userContentController.addUserScript(userScript)
+    }
+    
     func injectCss(_ cssString: String) {
         let jsString = "var style = document.createElement('style'); style.innerHTML = '\(cssString)'; document.head.appendChild(style);"
         evaluateJavaScript(jsString, completionHandler: nil)

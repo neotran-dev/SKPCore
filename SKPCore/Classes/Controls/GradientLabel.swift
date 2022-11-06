@@ -26,17 +26,14 @@ public class GradientLabel: UILabel {
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
-        setup()
     }
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        setup()
     }
     
     private func setup() {
         self.layer.sublayers?.forEach({ $0.removeFromSuperlayer() })
-        
         self.textAlignment = .center
         self.layer.cornerRadius = self.frame.height/2
         self.clipsToBounds = true
@@ -53,11 +50,11 @@ public class GradientLabel: UILabel {
         shape.strokeColor = UIColor.black.cgColor
         shape.fillColor = UIColor.clear.cgColor
         gradient.mask = shape
-        
         self.layer.addSublayer(gradient)
     }
     
     public override func drawText(in rect: CGRect) {
+        setup()
         if let gradientColor = drawGradientColor(in: rect, colors: gradientColors) {
             self.textColor = gradientColor
         }
