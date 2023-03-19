@@ -74,8 +74,14 @@ public extension BinaryFloatingPoint where Self: LosslessStringConvertible {
 }
 
 public extension Int {
-    var int64Value: Int64 { return Int64(self) }
+    var int16Value: Int16 { return Int16(self) }
     var int32Value: Int32 { return Int32(self) }
+    var int64Value: Int64 { return Int64(self) }
+    var numberValue: NSNumber { return NSNumber(value: self) }
+}
+
+public extension Int16 {
+    var intValue: Int { return Int(self) }
     var numberValue: NSNumber { return NSNumber(value: self) }
 }
 

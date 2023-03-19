@@ -16,4 +16,12 @@ public extension Bundle {
     static var shortVersion: String {
         stringValue("CFBundleShortVersionString") ?? ""
     }
+    
+    static var buildVersion: String {
+        stringValue("CFBundleVersion") ?? ""
+    }
+    
+    static var shortAndBuildVersion: String {
+        return self.shortVersion + "." + self.buildVersion
+    }
 }

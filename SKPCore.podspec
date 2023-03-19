@@ -41,16 +41,16 @@ Pod::Spec.new do |s|
   # s.dependency 'AFNetworking', '~> 2.3'
   #s.static_framework = true
   
-  s.dependency 'Alamofire', '~> 5.4'
-  s.dependency 'RxSwift', '~> 5.1.2'
-  s.dependency 'RxCocoa', '~> 5.1.1'
-  s.dependency 'RxDataSources', '~> 4.0.1'
-  s.dependency 'NSObject+Rx', '~> 5.1.0'
-  s.dependency 'RxSwiftUtilities', '~> 2.2.0'
-  s.dependency 'SwiftyJSON', '~> 5.0.1'
+  s.dependency 'Alamofire'
+  s.dependency 'RxSwift'
+  s.dependency 'RxCocoa'
+  s.dependency 'RxDataSources'
+  s.dependency 'NSObject+Rx'
+  s.dependency 'RxSwiftUtilities'
+  s.dependency 'RxSwiftExt'
+  s.dependency 'SwiftyJSON'
   s.dependency "KRProgressHUD", '~> 3.4.7'
   s.dependency 'SnapKit', '~> 5.0'
-  s.dependency 'RxSwiftExt', '~> 5.2.0'
   s.dependency 'SwiftEntryKit', '1.2.6'
   
   s.swift_version = "5"

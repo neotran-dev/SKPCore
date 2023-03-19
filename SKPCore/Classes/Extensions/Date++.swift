@@ -25,6 +25,24 @@ public extension Date {
         return formatter.string(from: self)
     }
     
+    func startOfDay() -> Date {
+        var components = Calendar.current.dateComponents([.year,.month, .day, .hour, .minute, .second], from: self)
+        components.hour = 0
+        components.minute = 0
+        components.second = 0
+        let result: Date = Calendar.current.date(from: components)!
+        return result
+    }
+    
+    func endOfDay() -> Date {
+        var components = Calendar.current.dateComponents([.year,.month, .day, .hour, .minute, .second], from: self)
+        components.hour = 23
+        components.minute = 59
+        components.second = 59
+        let result: Date = Calendar.current.date(from: components)!
+        return result
+    }
+    
     func startOfMonth() -> Date {
         var components = Calendar.current.dateComponents([.year,.month], from: self)
         components.day = 1

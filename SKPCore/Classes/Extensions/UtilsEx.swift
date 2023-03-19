@@ -87,6 +87,37 @@ public extension NSObject {
 }
 
 public extension UserDefaults {
+    
+    func save<T:Encodable>(customObject object: T, inKey key: String) {
+        let encoder = JSONEncoder()
+        guard object != nil else {
+            set(nil, forKey: key)
+            return
+        }
+        do {
+            let encoded = try encoder.encode(object)
+            self.set(encoded, forKey: key)
+        } catch {
+            print("Couldnt encode object \(error)")
+        }
+    }
+
+    func retrieve<T:Decodable>(object type:T.Type, fromKey key: String) -> T? {
+        if let data = self.data(forKey: key) {
+            let decoder = JSONDecoder()
+            do {
+                let object = try decoder.decode(type, from: data)
+                return object
+            } catch {
+                print("Couldnt decode object \(error)")
+                return nil
+            }
+        }else {
+            print("Couldnt find key")
+            return nil
+        }
+    }
+    
     static func setObj(_ value: Any?, forKey: String) {
         standard.set(value, forKey: forKey)
         standard.synchronize()

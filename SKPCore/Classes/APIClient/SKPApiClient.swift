@@ -12,6 +12,10 @@ import RxSwift
 import SwiftyJSON
 import KRProgressHUD
 
+public typealias HTTPMethod = Alamofire.HTTPMethod
+public typealias JSON = SwiftyJSON.JSON
+public typealias AFDataResponse = Alamofire.AFDataResponse
+
 final class Logger: EventMonitor {
     let queue = DispatchQueue(label: "AlamofireQueue")
     
@@ -35,12 +39,111 @@ final class Logger: EventMonitor {
 }
 
 open class SKPApiClient {
-    public static let shared: SKPApiClient = SKPApiClient()
-    fileprivate var session: Session
+    public static var shared: SKPApiClient = SKPApiClient()
     public var baseURL: String = ""
+    public var defaultHeaders: [String: String] = [:]
     
-    init() {
+    fileprivate var session: Session
+    
+    public init() {
         session = Session(eventMonitors: [Logger()])
+    }
+    //MARK: Public Methods
+    open func processResponse(_ response: AFDataResponse<Any>, autoCatchError: Bool, completion: SKPApiCompletionHandler?) {
+        switch response.result {
+        case .success(let resultData):
+            completion?(JSON(resultData), nil)
+        case .failure(let error):
+            let resError = response.errorResponseWithError(error)
+            if autoCatchError {
+                SKPPopupManager.shared.showErrorAlert(withMessage: resError.message)
+                completion?(JSON(), nil)
+                return
+            }
+            completion?(JSON(), resError)
+        }
+    }
+    
+    @discardableResult
+    open func request(method: HTTPMethod = .get,
+                 apiPath: String, params: [String: Any]? = nil,
+                 headers: [String: String]? = nil,
+                 authorization: SKPAuthorization,
+                 showHUD: Bool = true,
+                 autoCatchError: Bool = true,
+                 completion: SKPApiCompletionHandler? = nil) -> DataRequest {
+        
+        if showHUD { SKPHUDManager.shared.show() }
+        let fullPath = self.buildApiFullPath(apiPath)
+        let dataRequest = request(method: method, apiPath: fullPath, params: params, headers: headers, authorization: authorization)
+        
+        dataRequest.responseJSON { [weak self] dataResponse in
+            guard showHUD else {
+                self?.processResponse(dataResponse, autoCatchError: autoCatchError, completion: completion)
+                return
+            }
+            SKPHUDManager.shared.dismiss {
+                self?.processResponse(dataResponse, autoCatchError: autoCatchError, completion: completion)
+            }
+        }
+        return dataRequest
+    }
+    
+    open func uploadWith(apiPath: String,
+                    params: [String: Any]? = nil,
+                    headers: [String: String]? = nil,
+                    multipartDatas: [SKPMultipartData],
+                    authorization: SKPAuthorization,
+                    progress: SKPApiUploadProgressHandler? = nil,
+                    completion: SKPApiCompletionHandler? = nil) {
+        upload(apiPath: apiPath, params: params, headers: headers, multipartDatas: multipartDatas, authorization: authorization, progress: progress, completion: completion)
+    }
+    
+    open func rx_request(
+        method: HTTPMethod = .get,
+        apiPath: String,
+        params: [String: Any]? = nil,
+        headers: [String: String]? = nil,
+        authorization: SKPAuthorization,
+        showHUD: Bool = true,
+        autoCatchError: Bool = true) -> Observable<JSON> {
+        return Observable.create({ [weak self] observer -> Disposable in
+            self?.request(method: method, apiPath: apiPath, params: params, headers: headers, authorization: authorization, showHUD: showHUD, autoCatchError: autoCatchError) { (json, error) in
+                if let error = error {
+                    observer.onError(error)
+                } else {
+                    observer.onNext(json)
+                }
+                observer.onCompleted()
+            }
+            return Disposables.create()
+        })
+    }
+    
+    open func rx_upload(
+        apiPath: String,
+        params: [String: Any]? = nil,
+        headers: [String: String]? = nil,
+        multipartDatas: [SKPMultipartData],
+        authorization: SKPAuthorization) -> Observable<JSON> {
+        return Observable.create({ [weak self] observer -> Disposable in
+            self?.upload(apiPath: apiPath,
+                         params: params,
+                         headers: headers,
+                         multipartDatas: multipartDatas,
+                         authorization: authorization,
+                         progress: { (a, v) in
+                            
+                         }, completion: { (json, error) in
+                            if let error = error {
+                                observer.onError(error)
+                            } else {
+                                observer.onNext(json)
+                            }
+                            observer.onCompleted()
+                         })
+            return Disposables.create()
+        })
     }
 }
 
@@ -68,12 +171,12 @@ public extension SKPApiClient {
                              headers: [String: String]? = nil,
                              authorization: SKPAuthorization) -> DataRequest {
         
-        let requestHeaders = authorization.headerValue
-        let headers = HTTPHeaders(requestHeaders)
+        let requestHeaders = authorization.headerValue + defaultHeaders + (headers ?? [:])
+        let httpHeaders = HTTPHeaders(requestHeaders)
         
         let encoding: ParameterEncoding = method == .get ? URLEncoding.default : JSONEncoding.default
         
-        let dataRequest = session.request(apiPath, method: method, parameters: params, encoding: encoding, headers: headers)
+        let dataRequest = session.request(apiPath, method: method, parameters: params, encoding: encoding, headers: httpHeaders)
             .validate(statusCode: 200..<300)
         
         return dataRequest
@@ -88,7 +191,7 @@ public extension SKPApiClient {
         progress: SKPApiUploadProgressHandler? = nil,
         completion: SKPApiCompletionHandler? = nil) {
         
-        let requestHeaders = authorization.headerValue
+        let requestHeaders = authorization.headerValue + defaultHeaders + (headerParams ?? [:])
         let headers = HTTPHeaders(requestHeaders)
         
         AF.upload(multipartFormData: { (multipartFormData) in
@@ -117,106 +220,5 @@ public extension SKPApiClient {
         }.uploadProgress {
             progress?($0.completedUnitCount, $0.estimatedTimeRemaining)
         }
-    }
-}
-
-//MARK: Public Methods
-public extension SKPApiClient {
-    @discardableResult
-    func request(method: HTTPMethod = .get,
-                 apiPath: String, params: [String: Any]? = nil,
-                 headers: [String: String]? = nil,
-                 authorization: SKPAuthorization,
-                 showHUD: Bool = true,
-                 autoCatchError: Bool = true,
-                 completion: SKPApiCompletionHandler? = nil) -> DataRequest {
-        
-        if showHUD { SKPHUDManager.shared.show() }
-        let fullPath = self.buildApiFullPath(apiPath)
-        let dataRequest = request(method: method, apiPath: fullPath, params: params, headers: headers, authorization: authorization)
-        
-        func processResponse(_ response: AFDataResponse<Any>) {
-            switch response.result {
-            case .success(let resultData):
-                completion?(JSON(resultData), nil)
-            case .failure(let error):
-                let resError = response.errorResponseWithError(error)
-                print("--- API PATH: \(fullPath)\n--- Error: \(error.localizedDescription)")
-                if autoCatchError {
-                    SKPPopupManager.shared.showErrorAlert(withMessage: resError.message)
-                    completion?(JSON(), nil)
-                    return
-                }
-                completion?(JSON(), resError)
-            }
-        }
-        
-        dataRequest.responseJSON { dataResponse in
-            guard showHUD else {
-                processResponse(dataResponse)
-                return
-            }
-            SKPHUDManager.shared.dismiss {
-                processResponse(dataResponse)
-            }
-        }
-        return dataRequest
-    }
-    
-    func uploadWith(apiPath: String,
-                    params: [String: Any]? = nil,
-                    headers: [String: String]? = nil,
-                    multipartDatas: [SKPMultipartData],
-                    authorization: SKPAuthorization,
-                    progress: SKPApiUploadProgressHandler? = nil,
-                    completion: SKPApiCompletionHandler? = nil) {
-        upload(apiPath: apiPath, params: params, headers: headers, multipartDatas: multipartDatas, authorization: authorization, progress: progress, completion: completion)
-    }
-    
-    func rx_request(
-        method: HTTPMethod = .get,
-        apiPath: String,
-        params: [String: Any]? = nil,
-        headers: [String: String]? = nil,
-        authorization: SKPAuthorization,
-        showHUD: Bool = true,
-        autoCatchError: Bool = true) -> Observable<JSON> {
-        return Observable.create({ [weak self] observer -> Disposable in
-            self?.request(method: method, apiPath: apiPath, params: params, headers: headers, authorization: authorization, showHUD: showHUD, autoCatchError: autoCatchError) { (json, error) in
-                if let error = error {
-                    observer.onError(error)
-                } else {
-                    observer.onNext(json)
-                }
-                observer.onCompleted()
-            }
-            return Disposables.create()
-        })
-    }
-    
-    func rx_upload(
-        apiPath: String,
-        params: [String: Any]? = nil,
-        headers: [String: String]? = nil,
-        multipartDatas: [SKPMultipartData],
-        authorization: SKPAuthorization) -> Observable<JSON> {
-        return Observable.create({ [weak self] observer -> Disposable in
-            self?.upload(apiPath: apiPath,
-                         params: params,
-                         headers: headers,
-                         multipartDatas: multipartDatas,
-                         authorization: authorization,
-                         progress: { (a, v) in
-                            
-                         }, completion: { (json, error) in
-                            if let error = error {
-                                observer.onError(error)
-                            } else {
-                                observer.onNext(json)
-                            }
-                            observer.onCompleted()
-                         })
-            return Disposables.create()
-        })
     }
 }

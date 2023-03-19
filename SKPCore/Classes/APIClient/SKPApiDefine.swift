@@ -40,7 +40,7 @@ public enum SKPApiRequestState {
     case error(message: String)
 }
 
-public enum SKPAuthorization {
+public enum SKPAuthorization: Equatable {
     case token(token: String, isBearer: Bool)
     case basic(username: String, password: String)
     case none
