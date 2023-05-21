@@ -3,7 +3,7 @@
 //  SKPCore
 //
 //  Created by Tran Tung Lam on 6/2/20.
-//  Copyright © 2020 Sketch App Studio. All rights reserved.
+//  Copyright © 2020 Tran Tung Lam. All rights reserved.
 //
 
 import Foundation
@@ -17,24 +17,78 @@ public typealias JSON = SwiftyJSON.JSON
 public typealias AFDataResponse = Alamofire.AFDataResponse
 
 final class Logger: EventMonitor {
-    let queue = DispatchQueue(label: "AlamofireQueue")
-    
-    // Event called when any type of Request is resumed.
-    func requestDidResume(_ request: Request) {
-        print("Resuming: \(request)")
-    }
-    
-    // Event called whenever a DataRequest has parsed a response.
-    func request<Value>(_ request: DataRequest, didParseResponse response: DataResponse<Value, AFError>) {
-        // debugPrint("Finished: \(response)")
-    }
-    
-    func request(_ request: Request, didCreateURLRequest urlRequest: URLRequest) {
-        if let body = urlRequest.httpBody {
-            let str = String(decoding: body, as: UTF8.self)
-            debugPrint("Param: \(str)")
+
+    let queue = DispatchQueue(label: "AlamofireLoggerQueue")
+
+    // MARK: - Pretty JSON Formatter
+    private func prettyPrintJSON(_ raw: Any) -> String {
+        if let data = try? JSONSerialization.data(withJSONObject: raw, options: [.prettyPrinted]),
+           let string = String(data: data, encoding: .utf8) {
+            return string
         }
-        debugPrint("Header: \(urlRequest.allHTTPHeaderFields ?? [String: Any]())")
+        return "\(raw)"
+    }
+
+    private func prettyPrintJSONString(_ string: String) -> String {
+        guard let data = string.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) else {
+            return string
+        }
+        return prettyPrintJSON(json)
+    }
+
+    // MARK: - Log when request is created
+    func request(_ request: Request, didCreateURLRequest urlRequest: URLRequest) {
+        debugPrint("🚀====== REQUEST START ======")
+        // URL + Method
+        if let url = urlRequest.url?.absoluteString, let method = urlRequest.method?.rawValue {
+            debugPrint("➡️ URL: \(url) - METHOD: \(method)")
+        }
+        // Header
+        if let header = urlRequest.allHTTPHeaderFields {
+            debugPrint("📌 HEADER:")
+            debugPrint(prettyPrintJSON(header))
+        }
+        // Body
+        if let body = urlRequest.httpBody,
+           let bodyString = String(data: body, encoding: .utf8) {
+            debugPrint("📝 BODY:")
+            debugPrint(prettyPrintJSONString(bodyString))
+        }
+        debugPrint("🚀====== REQUEST END ======")
+    }
+
+    // MARK: - Log when request is resumed
+    func requestDidResume(_ request: Request) {
+        debugPrint("🔄 Resuming: \(request.request?.url?.absoluteString ?? "")")
+    }
+
+    // MARK: - Log parsed response
+    func request<Value>(_ request: DataRequest, didParseResponse response: DataResponse<Value, AFError>) {
+        debugPrint("📥 ====== RESPONSE ======")
+        // Status code
+        if let status = response.response?.statusCode {
+            debugPrint("📡 STATUS: \(status)")
+        }
+        // Pretty JSON response
+        switch response.result {
+        case .success(let value):
+            if let json = value as? [String: Any] {
+                debugPrint("✅ SUCCESS:")
+                debugPrint(prettyPrintJSON(json))
+            }
+            else if let arr = value as? [Any] {
+                debugPrint("✅ SUCCESS:")
+                debugPrint(prettyPrintJSON(arr))
+            }
+            else {
+                debugPrint("ℹ️ SUCCESS: \(value)")
+            }
+
+        case .failure(let error):
+            debugPrint("❌ ERROR: \(error.localizedDescription)")
+        }
+        debugPrint("📥 ====== END RESPONSE ======")
     }
 }
 
@@ -56,8 +110,8 @@ open class SKPApiClient {
         case .failure(let error):
             let resError = response.errorResponseWithError(error)
             if autoCatchError {
-                SKPPopupManager.shared.showErrorAlert(withMessage: resError.message)
                 completion?(JSON(), nil)
+                SKPPopupManager.shared.showErrorAlert(withMessage: resError.message)
                 return
             }
             completion?(JSON(), resError)
@@ -151,17 +205,31 @@ open class SKPApiClient {
 public extension SKPApiClient {
     
     fileprivate func buildApiFullPath(_ path: String) -> String {
-        guard !path.lowercased().hasPrefix("http://"), !path.lowercased().hasPrefix("https://") else {
-            return path.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) ?? path
-        }
-        
-        if let fullUrl = URL(string: self.baseURL)?.appendingPathComponent(path) {
-            let fullPath = fullUrl.absoluteString
-            return fullPath.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) ?? fullPath
-        } else {
-            let fullPath = self.baseURL.deleteSuffixPath + "/" + path.deletePrefixPath
-            return fullPath.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) ?? fullPath
-        }
+        // Nếu là full URL thì trả luôn, KHÔNG động vào
+          if path.lowercased().hasPrefix("http://") || path.lowercased().hasPrefix("https://") {
+              return path
+          }
+
+          // Base URL
+          guard var url = URL(string: self.baseURL) else {
+              return self.baseURL
+          }
+
+          // Tách path thành từng segment theo "/"
+          let segments = path
+              .split(separator: "/")
+              .map { String($0) }
+
+          for segment in segments {
+              // 🔹 Nếu segment đã encode (có %20, %E1...), decode về dạng thô
+              let decoded = segment.removingPercentEncoding ?? segment
+
+              // 🔹 Truyền string THÔ vào appendPathComponent
+              url.appendPathComponent(decoded)
+          }
+
+          // ❗ absoluteString đã được encode đúng → KHÔNG encode thêm nữa
+          return url.absoluteString
     }
     
     @discardableResult

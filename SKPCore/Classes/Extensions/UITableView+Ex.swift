@@ -422,14 +422,16 @@ public extension UITableViewHeaderFooterView {
 }
 
 public extension UIScrollView {
-    func setContentOffset(_ offset: CGPoint, duration: TimeInterval) {
+    func setContentOffset(_ offset: CGPoint, duration: TimeInterval, completion: (() -> Void)? = nil) {
         UIView.animate(withDuration: duration, animations: { [weak self] in
             self?.contentOffset = offset
-        }, completion: { [unowned self] _ in
+        }, completion: { [unowned self] finished in
+            guard finished else { return }
             if self.contentOffset != offset {
                 self.contentOffset = offset
             }
             self.delegate?.scrollViewDidEndScrollingAnimation?(self)
+            completion?()
         })
     }
 }

@@ -3,7 +3,7 @@
 //  SKPCore
 //
 //  Created by Tran Tung Lam on 10/16/20.
-//  Copyright © 2020 Sketch App Studio. All rights reserved.
+//  Copyright © 2020 Tran Tung Lam. All rights reserved.
 //
 
 import Foundation
@@ -12,12 +12,8 @@ import SwiftEntryKit
 
 public extension UIEdgeInsets {
     static var safeAreaInset: UIEdgeInsets {
-        if #available(iOS 11.0, *) {
-            return UIApplication.shared.keyWindow?.rootViewController?.view.safeAreaInsets ?? .zero
-        } else {
-            let statusBarMaxY = UIApplication.shared.statusBarFrame.maxY
-            return UIEdgeInsets(top: statusBarMaxY, left: 0, bottom: 10, right: 0)
-        }
+        let statusBarMaxY = UIApplication.shared.statusBarFrame.maxY
+        return UIEdgeInsets(top: statusBarMaxY, left: 0, bottom: 10, right: 0)
     }
 }
 
@@ -75,7 +71,7 @@ public class SKPPopupManager {
         if alert.actions.count == 0 { alert.addAction(UIAlertAction(title: "OK", style: .default)) }
        
         guard let vc = viewController else {
-            UIApplication.shared.keyWindow?.rootViewController?.topMostViewController.present(alert, animated: true, completion: completion)
+            UIApplication.shared.keyWindowCompatible?.rootViewController?.topMostViewController.present(alert, animated: true, completion: completion)
             return
         }
         vc.present(alert, animated: true, completion: completion)
@@ -111,7 +107,7 @@ public class SKPPopupManager {
         alert.addAction(desctructAction)
         
         guard let vc = viewController else {
-            UIApplication.shared.keyWindow?.rootViewController?.topMostViewController.present(alert, animated: true, completion: completion)
+            UIApplication.shared.keyWindowCompatible?.rootViewController?.topMostViewController.present(alert, animated: true, completion: completion)
             return
         }
         if let popOver = alert.popoverPresentationController,
@@ -175,6 +171,9 @@ public class SKPPopupManager {
         var customAttributes = ekAttributes
         customAttributes.name = entryName
         customAttributes.precedence = .override(priority: .normal, dropEnqueuedEntries: isDropCurrentEntry)
+        customAttributes.displayDuration = .infinity // popup không auto dismiss
+        customAttributes.entryInteraction = .absorbTouches // bỏ qua tap outside
+        customAttributes.screenInteraction = .absorbTouches
         view.cornerRadius = SKPPopupManager.cornerRadius
         SwiftEntryKit.display(entry: view, using: customAttributes, presentInsideKeyWindow: insideKeyWindow, rollbackWindow: rollbackWindow)
     }
