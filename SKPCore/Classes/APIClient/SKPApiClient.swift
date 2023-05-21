@@ -3,7 +3,7 @@
 //  SKPCore
 //
 //  Created by Tran Tung Lam on 6/2/20.
-//  Copyright © 2020 Sketch App Studio. All rights reserved.
+//  Copyright © 2020 Tran Tung Lam. All rights reserved.
 //
 
 import Foundation
@@ -21,7 +21,7 @@ final class Logger: EventMonitor {
     
     // Event called when any type of Request is resumed.
     func requestDidResume(_ request: Request) {
-        print("Resuming: \(request)")
+        debugPrint("Resuming: \(request)")
     }
     
     // Event called whenever a DataRequest has parsed a response.
@@ -56,8 +56,8 @@ open class SKPApiClient {
         case .failure(let error):
             let resError = response.errorResponseWithError(error)
             if autoCatchError {
-                SKPPopupManager.shared.showErrorAlert(withMessage: resError.message)
                 completion?(JSON(), nil)
+                SKPPopupManager.shared.showErrorAlert(withMessage: resError.message)
                 return
             }
             completion?(JSON(), resError)

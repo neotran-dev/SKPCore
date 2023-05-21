@@ -3,7 +3,7 @@
 //  SKPCore
 //
 //  Created by Tran Tung Lam on 10/20/20.
-//  Copyright © 2020 Sketch App Studio. All rights reserved.
+//  Copyright © 2020 Tran Tung Lam. All rights reserved.
 //
 
 import Foundation
@@ -152,6 +152,15 @@ public extension Date {
         let date1 = calendar.startOfDay(for: earliest)
         let date2 = calendar.startOfDay(for: latest)
         return calendar.dateComponents([.day], from: date1, to: date2).day
+    }
+    
+    static func yearsBetween(fromDate: Date, toDate: Date) -> Int? {
+        let calendar = Calendar.current
+        let earliest = toDate < fromDate ? toDate  : fromDate
+        let latest = (earliest == toDate) ? fromDate : toDate
+        let date1 = calendar.startOfDay(for: earliest)
+        let date2 = calendar.startOfDay(for: latest)
+        return calendar.dateComponents([.year], from: date1, to: date2).year
     }
     
     static func dates(from fromDate: Date, to toDate: Date) -> [Date] {

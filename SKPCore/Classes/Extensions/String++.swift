@@ -3,7 +3,7 @@
 //  SKPCore
 //
 //  Created by Tran Tung Lam on 6/2/20.
-//  Copyright © 2020 Sketch App Studio. All rights reserved.
+//  Copyright © 2020 Tran Tung Lam. All rights reserved.
 //
 
 import Foundation
@@ -52,6 +52,15 @@ public extension String {
         let parts = inputString.components(separatedBy: whitespaces)
         let filteredArray = parts.filter({ !$0.isEmptyString })
         inputString = filteredArray.joined(separator: " ")
+        return inputString
+    }
+    
+    func removeSequencesBreakline() -> String {
+        var inputString = self
+        let breakline = CharacterSet.newlines
+        let parts = inputString.components(separatedBy: breakline)
+        let filteredArray = parts.filter({ !$0.isEmptyString })
+        inputString = filteredArray.joined(separator: "\n")
         return inputString
     }
     

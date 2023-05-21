@@ -3,7 +3,7 @@
 //  SKPCore
 //
 //  Created by Lam Tran on 10/18/20.
-//  Copyright © 2020 Sketch App Studio. All rights reserved.
+//  Copyright © 2020 Tran Tung Lam. All rights reserved.
 //
 
 import Foundation

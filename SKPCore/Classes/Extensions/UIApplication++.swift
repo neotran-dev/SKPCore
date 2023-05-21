@@ -3,7 +3,7 @@
 //  SKPCore
 //
 //  Created by Tran Tung Lam on 10/22/20.
-//  Copyright © 2020 Sketch App Studio. All rights reserved.
+//  Copyright © 2020 Tran Tung Lam. All rights reserved.
 //
 
 import Foundation
@@ -23,5 +23,17 @@ public extension UIApplication {
             return UIApplication.shared.delegate?.window??.safeAreaInsets.top ?? 0
         }
         return 0
+    }
+    
+    /// Trả về keyWindow tương thích iOS 12 và iOS 13+
+    var keyWindowCompatible: UIWindow? {
+        if #available(iOS 13.0, *) {
+            return self.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first { $0.isKeyWindow }
+        } else {
+            return self.keyWindow
+        }
     }
 }
