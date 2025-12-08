@@ -20,23 +20,6 @@ final class Logger: EventMonitor {
 
     let queue = DispatchQueue(label: "AlamofireLoggerQueue")
 
-    // MARK: - Pretty JSON Formatter
-    private func prettyPrintJSON(_ raw: Any) -> String {
-        if let data = try? JSONSerialization.data(withJSONObject: raw, options: [.prettyPrinted]),
-           let string = String(data: data, encoding: .utf8) {
-            return string
-        }
-        return "\(raw)"
-    }
-
-    private func prettyPrintJSONString(_ string: String) -> String {
-        guard let data = string.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) else {
-            return string
-        }
-        return prettyPrintJSON(json)
-    }
-
     // MARK: - Log when request is created
     func request(_ request: Request, didCreateURLRequest urlRequest: URLRequest) {
         debugPrint("🚀====== REQUEST START ======")
@@ -47,13 +30,13 @@ final class Logger: EventMonitor {
         // Header
         if let header = urlRequest.allHTTPHeaderFields {
             debugPrint("📌 HEADER:")
-            debugPrint(prettyPrintJSON(header))
+            debugPrint(JSON(header))
         }
         // Body
         if let body = urlRequest.httpBody,
            let bodyString = String(data: body, encoding: .utf8) {
             debugPrint("📝 BODY:")
-            debugPrint(prettyPrintJSONString(bodyString))
+            debugPrint(JSON(body))
         }
         debugPrint("🚀====== REQUEST END ======")
     }
@@ -75,11 +58,11 @@ final class Logger: EventMonitor {
         case .success(let value):
             if let json = value as? [String: Any] {
                 debugPrint("✅ SUCCESS:")
-                debugPrint(prettyPrintJSON(json))
+                debugPrint(JSON(json))
             }
             else if let arr = value as? [Any] {
                 debugPrint("✅ SUCCESS:")
-                debugPrint(prettyPrintJSON(arr))
+                debugPrint(JSON(arr))
             }
             else {
                 debugPrint("ℹ️ SUCCESS: \(value)")
