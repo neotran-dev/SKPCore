@@ -79,11 +79,32 @@ open class SKPApiClient {
     public static var shared: SKPApiClient = SKPApiClient()
     public var baseURL: String = ""
     public var defaultHeaders: [String: String] = [:]
-    
+
+    /// Inactivity window applied to every request that `requestTimeout(forApiPath:)`
+    /// does not widen.
+    public static var defaultRequestTimeout: TimeInterval = 60
+
+    /// Ceiling for a whole request regardless of how often bytes trickle in.
+    public static var defaultResourceTimeout: TimeInterval = 180
+
     fileprivate var session: Session
     
     public init() {
-        session = Session(eventMonitors: [Logger()])
+        // Start from Alamofire's default so the standard User-Agent / Accept-Encoding
+        // / Accept-Language headers stay in place; only the timeouts are ours.
+        let configuration = URLSessionConfiguration.af.default
+        configuration.timeoutIntervalForRequest = SKPApiClient.defaultRequestTimeout
+        configuration.timeoutIntervalForResource = SKPApiClient.defaultResourceTimeout
+        // `waitsForConnectivity` is deliberately left off: it would turn a genuinely
+        // offline device into a spinner that lasts until the resource timeout, and
+        // there is no offline state in the UI to show instead.
+        session = Session(configuration: configuration, eventMonitors: [Logger()])
+    }
+
+    /// Override to widen the inactivity window for endpoints that legitimately
+    /// take longer than a plain CRUD call.
+    open func requestTimeout(forApiPath path: String) -> TimeInterval {
+        SKPApiClient.defaultRequestTimeout
     }
     //MARK: Public Methods
     open func processResponse(_ response: AFDataResponse<Any>, autoCatchError: Bool, completion: SKPApiCompletionHandler?) {
@@ -226,8 +247,16 @@ public extension SKPApiClient {
         let httpHeaders = HTTPHeaders(requestHeaders)
         
         let encoding: ParameterEncoding = method == .get ? URLEncoding.default : JSONEncoding.default
+        let timeout = requestTimeout(forApiPath: apiPath)
         
-        let dataRequest = session.request(apiPath, method: method, parameters: params, encoding: encoding, headers: httpHeaders)
+        let dataRequest = session.request(
+            apiPath,
+            method: method,
+            parameters: params,
+            encoding: encoding,
+            headers: httpHeaders,
+            requestModifier: { $0.timeoutInterval = timeout }
+        )
             .validate(statusCode: 200..<300)
         
         return dataRequest
