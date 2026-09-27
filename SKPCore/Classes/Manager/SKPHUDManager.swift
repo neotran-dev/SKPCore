@@ -9,6 +9,13 @@
 import Foundation
 import KRProgressHUD
 
+/// Pluggable HUD presenter. Apps can inject a custom visual while keeping
+/// `SKPHUDManager.show/dismiss` call sites unchanged.
+public protocol SKPHUDPresenting: AnyObject {
+    func show()
+    func dismiss(_ completion: (() -> Void)?)
+}
+
 public class SKPHUDManager {
     public typealias SKPProgressStyle = KRProgressHUDStyle
     public typealias SKPProgressMaskType = KRProgressHUDMaskType
@@ -26,16 +33,29 @@ public class SKPHUDManager {
     public static let shared: SKPHUDManager = SKPHUDManager()
     
     public static let appearance = SKPHUDAppearance()
+
+    /// When set, `show`/`dismiss` route here instead of `KRProgressHUD`.
+    public var presenter: SKPHUDPresenting?
     
     public func show() {
         DispatchQueue.mainAsync { [weak self] in
-            KRProgressHUD.show()
+            guard let self else { return }
+            if let presenter = self.presenter {
+                presenter.show()
+            } else {
+                KRProgressHUD.show()
+            }
         }
     }
     
     public func dismiss(_ completion: (() -> Void)? = nil) {
         DispatchQueue.mainAsync { [weak self] in
-            KRProgressHUD.dismiss(completion)
+            guard let self else { return }
+            if let presenter = self.presenter {
+                presenter.dismiss(completion)
+            } else {
+                KRProgressHUD.dismiss(completion)
+            }
         }
     }
 }
